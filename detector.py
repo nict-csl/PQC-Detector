@@ -256,7 +256,7 @@ def process_single_pcap(pcap_path: Path, out_csv: Path, temp_dir: Optional[Path]
     with out_csv.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         if mode == "client":
-            writer.writerow(["Frame", "Src", "SrcPort", "Dst", "DstPort", "Proto", "SupportedGroups", "ServerName"])
+            writer.writerow(["Frame", "Src", "SrcPort", "Dst", "DstPort", "Proto", "SupportedGroups", "SignatureAlgorithms", "ServerName"])
         else:
             writer.writerow(["Frame", "Src", "SrcPort", "Dst", "DstPort", "Proto", "KeyShareGroup", "CipherSuite"])
 
@@ -289,6 +289,7 @@ def process_single_pcap(pcap_path: Path, out_csv: Path, temp_dir: Optional[Path]
                     if mode == "client":
                         # ClientHello fields for QUIC
                         supported_groups = getattr(pkt.quic, "tls_handshake_extensions_supported_group", "")
+                        signature_algorithms = getattr(pkt.quic, "tls_handshake_sig_hash_alg", "")
                         server_name = getattr(pkt.quic, "tls_handshake_extensions_server_name", "")
                     else:
                         # ServerHello fields for QUIC
@@ -305,6 +306,7 @@ def process_single_pcap(pcap_path: Path, out_csv: Path, temp_dir: Optional[Path]
                         proto_value = "TLS"
                         # ClientHello fields for TLS
                         supported_groups = getattr(tls, "handshake_extensions_supported_group", "")
+                        signature_algorithms = getattr(tls, "handshake_sig_hash_alg", "")
                         server_name = getattr(tls, "handshake_extensions_server_name", "")
                     else:
                         # ServerHello mode: determine TLS version
@@ -338,7 +340,22 @@ def process_single_pcap(pcap_path: Path, out_csv: Path, temp_dir: Optional[Path]
                                 supported_groups_str = str(supported_groups)
                         except Exception:
                             supported_groups_str = str(supported_groups)
-                    
+
+                    # Handle multiple SignatureAlgorithms
+                    signature_algorithms_str = ""
+                    if signature_algorithms:
+                        try:
+                            if hasattr(signature_algorithms, 'fields') and signature_algorithms.fields:
+                                sig_list = []
+                                for field in signature_algorithms.fields:
+                                    if hasattr(field, 'show'):
+                                        sig_list.append(field.show)
+                                signature_algorithms_str = ",".join(sig_list)
+                            else:
+                                signature_algorithms_str = str(signature_algorithms)
+                        except Exception:
+                            signature_algorithms_str = str(signature_algorithms)
+
                     writer.writerow([
                         frame_no,
                         str(src),
@@ -347,6 +364,7 @@ def process_single_pcap(pcap_path: Path, out_csv: Path, temp_dir: Optional[Path]
                         str(dst_port or ""),
                         str(proto_value or ""),
                         supported_groups_str,
+                        signature_algorithms_str,
                         str(server_name or ""),
                     ])
                 else:

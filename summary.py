@@ -31,22 +31,26 @@ def load_config(config_path: Path) -> dict:
         return yaml.safe_load(f) or {}
 
 
-def load_mappings(mappings_dir: Path) -> Tuple[Dict, Dict, Dict]:
-    """Load supported groups, cipher suites, and protocol versions mappings from YAML files."""
+def load_mappings(mappings_dir: Path) -> Tuple[Dict, Dict, Dict, Dict]:
+    """Load supported groups, cipher suites, protocol versions, and signature schemes mappings from YAML files."""
     supported_groups_path = mappings_dir / "supported_groups.yaml"
     cipher_suites_path = mappings_dir / "cipher_suites.yaml"
     protocol_versions_path = mappings_dir / "protocol_versions.yaml"
-    
+    signature_schemes_path = mappings_dir / "signature_schemes.yaml"
+
     with supported_groups_path.open("r", encoding="utf-8") as f:
         supported_groups = yaml.safe_load(f) or {}
-    
+
     with cipher_suites_path.open("r", encoding="utf-8") as f:
         cipher_suites = yaml.safe_load(f) or {}
-    
+
     with protocol_versions_path.open("r", encoding="utf-8") as f:
         protocol_versions = yaml.safe_load(f) or {}
-    
-    return supported_groups, cipher_suites, protocol_versions
+
+    with signature_schemes_path.open("r", encoding="utf-8") as f:
+        signature_schemes = yaml.safe_load(f) or {}
+
+    return supported_groups, cipher_suites, protocol_versions, signature_schemes
 
 
 def read_csv_files(directories: list) -> Generator[Tuple[Dict, str], None, None]:
@@ -126,7 +130,7 @@ def is_pqc_supported_groups(supported_groups_str: str, supported_groups_mapping:
     """Check if SupportedGroups string contains PQC groups."""
     if not supported_groups_str or supported_groups_str.strip() == "":
         return False
-    
+
     # Split by comma and check each group
     groups = [g.strip() for g in supported_groups_str.split(",") if g.strip()]
     for group in groups:
@@ -134,6 +138,22 @@ def is_pqc_supported_groups(supported_groups_str: str, supported_groups_mapping:
         if normalized_id is not None:
             group_info = supported_groups_mapping.get(normalized_id, {})
             if group_info.get('is_pqc', False):
+                return True
+    return False
+
+
+def is_pqc_signature_algorithms(signature_algorithms_str: str, signature_schemes_mapping: Dict) -> bool:
+    """Check if SignatureAlgorithms string contains PQC schemes."""
+    if not signature_algorithms_str or signature_algorithms_str.strip() == "":
+        return False
+
+    # Split by comma and check each scheme
+    schemes = [s.strip() for s in signature_algorithms_str.split(",") if s.strip()]
+    for scheme in schemes:
+        normalized_id = normalize_group_id(scheme)
+        if normalized_id is not None:
+            scheme_info = signature_schemes_mapping.get(normalized_id, {})
+            if scheme_info.get('is_pqc', False):
                 return True
     return False
 
@@ -177,6 +197,7 @@ def calculate_statistics(rows: Generator[Tuple[Dict, str], None, None],
                         supported_groups: Dict, 
                         cipher_suites: Dict,
                         protocol_versions: Dict,
+                        signature_schemes: Dict,
                         enable_pqc_servers: bool = False) -> Dict:
     """Calculate statistics from CSV rows."""
     stats = {
@@ -208,7 +229,11 @@ def calculate_statistics(rows: Generator[Tuple[Dict, str], None, None],
         'clienthello_pqc_protocol_counts': Counter(),
         'clienthello_pqc_groups': set(),
         'clienthello_group_names': {},
-        
+        'clienthello_pqc_sig': 0,
+        'clienthello_sig_counts': Counter(),
+        'clienthello_pqc_sigs': set(),
+        'clienthello_sig_names': {},
+
         # Packet matching and PQC server analysis
         'serverhello_packets': [],  # Store ServerHello packets for matching
         'clienthello_packets': [],  # Store ClientHello packets for matching
@@ -323,7 +348,28 @@ def calculate_statistics(rows: Generator[Tuple[Dict, str], None, None],
                         
                         if group_info.get('is_pqc', False):
                             stats['clienthello_pqc_groups'].add(group_name)
-        
+
+            # ClientHello analysis: SignatureAlgorithms
+            signature_algorithms_str = row.get('SignatureAlgorithms', '').strip()
+            if signature_algorithms_str:
+                # Check if any of the signature algorithms are PQC
+                if is_pqc_signature_algorithms(signature_algorithms_str, signature_schemes):
+                    stats['clienthello_pqc_sig'] += 1
+                    is_pqc_packet = True
+
+                # Parse and count individual schemes
+                schemes = [s.strip() for s in signature_algorithms_str.split(",") if s.strip()]
+                for scheme in schemes:
+                    normalized_id = normalize_group_id(scheme)
+                    if normalized_id is not None:
+                        scheme_info = signature_schemes.get(normalized_id, {})
+                        scheme_name = scheme_info.get('name', f"Unknown({scheme})")
+                        stats['clienthello_sig_counts'][scheme_name] += 1
+                        stats['clienthello_sig_names'][scheme_name] = scheme
+
+                        if scheme_info.get('is_pqc', False):
+                            stats['clienthello_pqc_sigs'].add(scheme_name)
+
         # PQC packet specific analysis
         if is_pqc_packet:
             if file_type == "serverhello":
@@ -521,7 +567,18 @@ def format_output(stats: Dict, protocol_versions: Dict) -> str:
                 percentage = (count / clienthello_total * 100) if clienthello_total > 0 else 0
                 output.append(f"  {i}. {group}: {count:,} ({percentage:.2f}%)")
             output.append("")
-        
+
+        # PQC ClientHello SignatureAlgorithms usage frequency (Top 10)
+        pqc_clienthello_sig_counts = {name: count for name, count in stats['clienthello_sig_counts'].items()
+                                      if name in stats['clienthello_pqc_sigs']}
+        if pqc_clienthello_sig_counts:
+            output.append("PQC ClientHello SignatureAlgorithms usage frequency (Top 10):")
+            for i, (scheme, count) in enumerate(sorted(pqc_clienthello_sig_counts.items(),
+                                                    key=lambda x: x[1], reverse=True)[:10], 1):
+                percentage = (count / clienthello_total * 100) if clienthello_total > 0 else 0
+                output.append(f"  {i}. {scheme}: {count:,} ({percentage:.2f}%)")
+            output.append("")
+
         # PQC ClientHello packet Protocol distribution
         if stats['clienthello_pqc_protocol_counts']:
             output.append("PQC ClientHello packet Protocol distribution:")
@@ -632,7 +689,7 @@ def main(argv=None) -> int:
     
     # Load mappings
     try:
-        supported_groups, cipher_suites, protocol_versions = load_mappings(mappings_dir)
+        supported_groups, cipher_suites, protocol_versions, signature_schemes = load_mappings(mappings_dir)
     except Exception as e:
         print(f"Error: Failed to load mappings: {e}", file=sys.stderr)
         return 1
@@ -647,7 +704,7 @@ def main(argv=None) -> int:
     # Read CSV files and calculate statistics
     try:
         rows = read_csv_files(args.directories)
-        stats = calculate_statistics(rows, supported_groups, cipher_suites, protocol_versions, bool(args.pqc_servers))
+        stats = calculate_statistics(rows, supported_groups, cipher_suites, protocol_versions, signature_schemes, bool(args.pqc_servers))
         
         # Format and output results
         output = format_output(stats, protocol_versions)

@@ -1,0 +1,56 @@
+# TLS SignatureScheme mapping
+# Based on the IANA TLS SignatureScheme registry
+# https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-signaturescheme
+# Format: {id: {name: "SignatureSchemeName", is_pqc: boolean}}
+
+0x0201: {name: "rsa_pkcs1_sha1", is_pqc: false}
+0x0203: {name: "ecdsa_sha1", is_pqc: false}
+0x0401: {name: "rsa_pkcs1_sha256", is_pqc: false}
+0x0403: {name: "ecdsa_secp256r1_sha256", is_pqc: false}
+0x0420: {name: "rsa_pkcs1_sha256_legacy", is_pqc: false}
+0x0501: {name: "rsa_pkcs1_sha384", is_pqc: false}
+0x0503: {name: "ecdsa_secp384r1_sha384", is_pqc: false}
+0x0520: {name: "rsa_pkcs1_sha384_legacy", is_pqc: false}
+0x0601: {name: "rsa_pkcs1_sha512", is_pqc: false}
+0x0603: {name: "ecdsa_secp521r1_sha512", is_pqc: false}
+0x0620: {name: "rsa_pkcs1_sha512_legacy", is_pqc: false}
+0x0704: {name: "eccsi_sha256", is_pqc: false}
+0x0705: {name: "iso_ibs1", is_pqc: false}
+0x0706: {name: "iso_ibs2", is_pqc: false}
+0x0707: {name: "iso_chinese_ibs", is_pqc: false}
+0x0708: {name: "sm2sig_sm3", is_pqc: false}
+0x0709: {name: "gostr34102012_256a", is_pqc: false}
+0x070A: {name: "gostr34102012_256b", is_pqc: false}
+0x070B: {name: "gostr34102012_256c", is_pqc: false}
+0x070C: {name: "gostr34102012_256d", is_pqc: false}
+0x070D: {name: "gostr34102012_512a", is_pqc: false}
+0x070E: {name: "gostr34102012_512b", is_pqc: false}
+0x070F: {name: "gostr34102012_512c", is_pqc: false}
+0x0804: {name: "rsa_pss_rsae_sha256", is_pqc: false}
+0x0805: {name: "rsa_pss_rsae_sha384", is_pqc: false}
+0x0806: {name: "rsa_pss_rsae_sha512", is_pqc: false}
+0x0807: {name: "ed25519", is_pqc: false}
+0x0808: {name: "ed448", is_pqc: false}
+0x0809: {name: "rsa_pss_pss_sha256", is_pqc: false}
+0x080A: {name: "rsa_pss_pss_sha384", is_pqc: false}
+0x080B: {name: "rsa_pss_pss_sha512", is_pqc: false}
+0x081A: {name: "ecdsa_brainpoolP256r1tls13_sha256", is_pqc: false}
+0x081B: {name: "ecdsa_brainpoolP384r1tls13_sha384", is_pqc: false}
+0x081C: {name: "ecdsa_brainpoolP512r1tls13_sha512", is_pqc: false}
+# Post-quantum ML-DSA (FIPS 204), code points from draft-ietf-tls-mldsa
+0x0904: {name: "mldsa44", is_pqc: true}
+0x0905: {name: "mldsa65", is_pqc: true}
+0x0906: {name: "mldsa87", is_pqc: true}
+# Post-quantum SLH-DSA (FIPS 205), code points from draft-reddy-tls-slhdsa (draft, not yet IANA-assigned)
+0x0911: {name: "slhdsa_sha2_128s", is_pqc: true}
+0x0912: {name: "slhdsa_sha2_128f", is_pqc: true}
+0x0913: {name: "slhdsa_sha2_192s", is_pqc: true}
+0x0914: {name: "slhdsa_sha2_192f", is_pqc: true}
+0x0915: {name: "slhdsa_sha2_256s", is_pqc: true}
+0x0916: {name: "slhdsa_sha2_256f", is_pqc: true}
+0x0917: {name: "slhdsa_shake_128s", is_pqc: true}
+0x0918: {name: "slhdsa_shake_128f", is_pqc: true}
+0x0919: {name: "slhdsa_shake_192s", is_pqc: true}
+0x091A: {name: "slhdsa_shake_192f", is_pqc: true}
+0x091B: {name: "slhdsa_shake_256s", is_pqc: true}
+0x091C: {name: "slhdsa_shake_256f", is_pqc: true}

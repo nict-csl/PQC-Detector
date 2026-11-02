@@ -7,7 +7,7 @@ A Python tool for analyzing pcap files to detect Post-Quantum Cryptography (PQC)
 - **Dual Protocol Analysis**: Extract both TLS ServerHello and ClientHello packets from large pcap files (GB scale, millions of packets)
 - **Memory Optimization**: Efficient processing with display filters and memory monitoring
 - **Compression Support**: Automatic decompression of zst-compressed pcap files
-- **PQC Detection**: Identify PQC NamedGroups and analyze utilization rates
+- **PQC Detection**: Identify PQC NamedGroups and PQC SignatureAlgorithms (ML-DSA, SLH-DSA) and analyze utilization rates
 - **Packet Matching**: Match ServerHello and ClientHello packets to identify PQC servers
 - **High Performance**: Parallel processing with configurable worker count
 - **Comprehensive Statistics**: Detailed analysis of NamedGroups, CipherSuites, and protocol distribution
@@ -30,7 +30,7 @@ python detector.py <pcap_file_or_directory> [-m|--mode server|client] [--workers
 
 **Output:**
 - **ServerHello mode**: CSV files with `*_serverhello.csv` containing Frame, Src, SrcPort, Dst, DstPort, Proto, KeyShareGroup, CipherSuite
-- **ClientHello mode**: CSV files with `*_clienthello.csv` containing Frame, Src, SrcPort, Dst, DstPort, Proto, SupportedGroups, ServerName
+- **ClientHello mode**: CSV files with `*_clienthello.csv` containing Frame, Src, SrcPort, Dst, DstPort, Proto, SupportedGroups, SignatureAlgorithms, ServerName
 - Processing speed metrics (packets/second)
 - Memory usage monitoring (pyshark and tshark processes)
 - Automatic cleanup of temporary decompressed files
