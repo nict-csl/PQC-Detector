@@ -37,9 +37,11 @@
 0x081A: {name: "ecdsa_brainpoolP256r1tls13_sha256", is_pqc: false}
 0x081B: {name: "ecdsa_brainpoolP384r1tls13_sha384", is_pqc: false}
 0x081C: {name: "ecdsa_brainpoolP512r1tls13_sha512", is_pqc: false}
+# Post-quantum ML-DSA (FIPS 204), code points from draft-ietf-tls-mldsa
 0x0904: {name: "mldsa44", is_pqc: true}
 0x0905: {name: "mldsa65", is_pqc: true}
 0x0906: {name: "mldsa87", is_pqc: true}
+# Post-quantum SLH-DSA (FIPS 205), code points from draft-reddy-tls-slhdsa (draft, not yet IANA-assigned)
 0x0911: {name: "slhdsa_sha2_128s", is_pqc: true}
 0x0912: {name: "slhdsa_sha2_128f", is_pqc: true}
 0x0913: {name: "slhdsa_sha2_192s", is_pqc: true}
